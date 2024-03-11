@@ -1,0 +1,20 @@
+# PyCharm
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# Python
+__pycache__/
+*.pyc
+
+# Virtual Environment
+venv/
+ENV/
+
+# FastAPI
+__pycache__/
+.dockerignore
+.DS_Store
+.env
+.env.test
