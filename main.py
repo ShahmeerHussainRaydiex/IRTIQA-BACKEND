@@ -7,8 +7,8 @@ from helper import video_to_base64, change_aspect_ratio
 import json
 from openai import OpenAI
 
-client = OpenAI(api_key="")
-
+# client = OpenAI(api_key="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")
+client =""
 app = FastAPI()
 
 @app.get("/check")
