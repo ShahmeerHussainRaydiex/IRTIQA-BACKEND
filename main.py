@@ -1,11 +1,18 @@
+from pathlib import Path
 import uvicorn
-from fastapi import FastAPI, HTTPException, Header
+from fastapi import FastAPI, HTTPException, Header, UploadFile, File, Form
 import requests
 from pypexels import PyPexels
+from helper import video_to_base64, change_aspect_ratio
+import json
+from openai import OpenAI
 
+client = OpenAI(api_key="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")
 
 app = FastAPI()
 
+
+# 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
 
 @app.get("/check")
 async def root():
@@ -34,7 +41,7 @@ async def root():
     return {f"message": f"Hello World"}
 
 
-API_KEY = "Wtp3BUo71YxFRAgWqIawy6BnpIDagOQtbh2YeUu4r6kKCmwwPXGhHIHS"
+API_KEY = "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"
 
 
 @app.get("/search/images")
@@ -48,8 +55,10 @@ async def search_images(query: str):
 
     if response.status_code != 200:
         raise HTTPException(status_code=response.status_code, detail="Pexels API request failed")
+    response = response.json()
+    image_url = response['photos'][0]['url']
 
-    return response.json()
+    return image_url
 
 
 @app.get("/search/videos")
@@ -63,8 +72,13 @@ async def search_videos(query: str, per_page: int = 1):
 
     if response.status_code != 200:
         raise HTTPException(status_code=response.status_code, detail="Pexels API request failed")
+    response = response.json()
+    response_links = {}
+    for index, video in enumerate(response["videos"]):
+        link = video["video_files"][0]["link"]
+        response_links[f"url{index + 1}"] = link
 
-    return response.json()
+    return response_links
 
 
 @app.get("/search/test")
@@ -86,5 +100,83 @@ async def search_videos(query: str, num_page: int = 1, per_page: int = 1):
             outfile.write(r.content)
     return {f"message": f"Downloaded videos"}
 
+
+@app.get("/video/video")
+async def search_videos_stable(prompt: str):
+    url = "https://modelslab.com/api/v6/video/video2video"
+    video_path = "8625246.mp4"  # Provide the path to your video file
+    base64_video = video_to_base64(video_path)
+    print(base64_video)
+
+    payload = json.dumps({
+        "key": "QD8EDw5KCqXrw1OTPsqN1oqwHDl2oUfutLPwIaIq0g1pzge6hDRgIgrn5xoP",
+        "model_id": "midjourney",
+        "prompt": prompt,
+        "negative_prompt": "low quality",
+        "init_video": base64_video,
+        "height": 512,
+        "width": 512,
+        "num_frames": 16,
+        "num_inference_steps": 20,
+        "guidance_scale": 7,
+        "strength": 0.7,
+        "base64": True,
+        "webhook": None,
+        "track_id": None
+    })
+
+    headers = {
+        'Content-Type': 'application/json'
+    }
+
+    response = requests.request("POST", url, headers=headers, data=payload)
+
+    print(response.text)
+    return response.json()
+
+
+@app.post("/convert_text_to_speech/")
+async def convert_text_to_speech(text: str):
+    try:
+        response = client.audio.speech.create(
+            model="tts-1",
+            voice="alloy",
+            input=text
+        )
+        speech_file_path = Path(__file__).parent / "speech.mp3"
+        response.stream_to_file(speech_file_path)
+        return {"message": "Text converted to speech successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/transcribe_audio/")
+async def transcribe_audio(audio_file: UploadFile = File(...)):
+    try:
+        with audio_file.file as file:
+            transcription = client.audio.transcriptions.create(
+                model="whisper-1",
+                file=file
+            )
+        return {"transcription": transcription.text}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/generate-story/")
+async def generate_story(prompt: str = Form(...)):
+    try:
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": prompt}
+            ],
+            max_tokens=150
+        )
+        return {"story": response['choices'][0]['message']['content']}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="127.0.0.1", port=8001)
