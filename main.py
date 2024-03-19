@@ -7,7 +7,8 @@ from helper import video_to_base64, change_aspect_ratio
 import json
 from openai import OpenAI
 
-# client = OpenAI(api_key="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")
+
+
 client =""
 app = FastAPI()
 
@@ -38,9 +39,8 @@ async def root():
     return {f"message": f"Hello World"}
 
 
-API_KEY = "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"
 
-
+API_KEY = ""
 @app.get("/search/images")
 async def search_images(query: str):
     headers = {
