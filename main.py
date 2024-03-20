@@ -5,14 +5,16 @@ import requests
 from pypexels import PyPexels
 from helper import video_to_base64, change_aspect_ratio
 import json
+from dotenv import load_dotenv
+import os
 from openai import OpenAI
 
-client = OpenAI(api_key="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")
+
+
 
 app = FastAPI()
-
-
-# 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
+load_dotenv()
+client = OpenAI()
 
 @app.get("/check")
 async def root():
@@ -41,9 +43,8 @@ async def root():
     return {f"message": f"Hello World"}
 
 
-API_KEY = "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"
 
-
+API_KEY = os.getenv("PEXEL")
 @app.get("/search/images")
 async def search_images(query: str):
     headers = {
@@ -109,7 +110,7 @@ async def search_videos_stable(prompt: str):
     print(base64_video)
 
     payload = json.dumps({
-        "key": "QD8EDw5KCqXrw1OTPsqN1oqwHDl2oUfutLPwIaIq0g1pzge6hDRgIgrn5xoP",
+        "key": os.getenv("STABLE_DIFFUSION"),
         "model_id": "midjourney",
         "prompt": prompt,
         "negative_prompt": "low quality",
