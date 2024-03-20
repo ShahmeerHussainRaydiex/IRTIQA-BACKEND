@@ -16,7 +16,7 @@ app = FastAPI()
 load_dotenv()
 
 from openai import OpenAI
-client = OpenAI(api_key="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")
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 @app.get("/check")
 async def root():
