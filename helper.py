@@ -1,6 +1,4 @@
 import base64
-import requests
-from io import BytesIO
 from moviepy.editor import *
 
 
