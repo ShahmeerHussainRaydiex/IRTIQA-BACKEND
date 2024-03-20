@@ -3,7 +3,7 @@ import uvicorn
 from fastapi import FastAPI, HTTPException, Header, UploadFile, File, Form
 import requests
 from pypexels import PyPexels
-from helper import video_to_base64, change_aspect_ratio
+from helper import video_to_base64
 import json
 from dotenv import load_dotenv
 import os

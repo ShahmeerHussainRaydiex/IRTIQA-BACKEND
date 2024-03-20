@@ -1,5 +1,4 @@
 import base64
-from PIL import Image
 import requests
 from io import BytesIO
 from moviepy.editor import *
@@ -10,13 +9,6 @@ def video_to_base64(video_path):
     with open(video_path, "rb") as video_file:
         encoded_string = base64.b64encode(video_file.read())
         return encoded_string.decode('utf-8')
-
-
-def change_aspect_ratio(image_url, new_width, new_height):
-    response = requests.get(image_url)
-    image = Image.open(BytesIO(response.content))
-    resized_image = image.resize((new_width, new_height))
-    return resized_image
 
 
 
@@ -70,7 +62,6 @@ def resize_with_padding(video_clip, target_width, target_height):
     return resized_clip
 
 
-# Load the video
 
 def new():
     video_path = "test.mp4"
@@ -157,4 +148,3 @@ def crop():
     video_clip.close()
     cropped_clip.close()
 
-crop()
