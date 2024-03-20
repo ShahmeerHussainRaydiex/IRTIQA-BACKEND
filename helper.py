@@ -84,6 +84,7 @@ def new():
 
     # Calculate padding to maintain aspect ratio
     padding_horizontal = (target_width - resized_clip.w)
+    padding_horizontal = (target_width - resized_clip.w//2)//2
     padding_vertical = (target_height - resized_clip.h)
 
     # Apply padding to center the resized video
@@ -117,4 +118,43 @@ def new():
 # video_clip.close()
 # video_clip_resized.close()
 
-new()
+
+def crop():
+    video_path = "test.mp4"
+    video_clip = VideoFileClip(video_path)
+
+    # Define the target aspect ratio
+    target_width, target_height = 1080, 1080  # Target resolution
+
+    # Calculate the aspect ratio of the original video
+    original_aspect_ratio = video_clip.size[0] / video_clip.size[1]
+
+    # Calculate the dimensions for cropping
+    if original_aspect_ratio > target_width / target_height:  # Video is wider than the target
+        new_height = video_clip.size[1]
+        new_width = int(new_height * (target_width / target_height))
+    else:  # Video is taller than the target
+        new_width = video_clip.size[0]
+        new_height = int(new_width * (target_height / target_width))
+
+    # Calculate the coordinates for cropping
+    x1 = (video_clip.size[0] - new_width) // 2
+    y1 = (video_clip.size[1] - new_height) // 2
+    x2 = x1 + new_width
+    y2 = y1 + new_height
+
+    # Crop the video to the specified region
+    cropped_clip = video_clip.crop(x1=x1, y1=y1, x2=x2, y2=y2)
+
+    # Resize the cropped clip to the target resolution
+    cropped_clip = cropped_clip.resize((target_width, target_height))
+
+    # Write the cropped video to a new file
+    output_path = "output_video.mp4"
+    cropped_clip.write_videofile(output_path, codec="libx264")
+
+    # Close the clips
+    video_clip.close()
+    cropped_clip.close()
+
+crop()

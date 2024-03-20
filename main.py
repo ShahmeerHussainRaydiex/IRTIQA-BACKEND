@@ -14,6 +14,8 @@ from openai import OpenAI
 
 app = FastAPI()
 load_dotenv()
+
+from openai import OpenAI
 client = OpenAI()
 
 @app.get("/check")
