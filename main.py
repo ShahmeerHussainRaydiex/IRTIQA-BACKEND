@@ -8,15 +8,16 @@ import json
 from dotenv import load_dotenv
 import os
 from openai import OpenAI
-
+from pprint import pprint
+from leap import Leap, ApiException
 
 
 
 app = FastAPI()
 load_dotenv()
 
-from openai import OpenAI
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+# from openai import OpenAI
+client =OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 @app.get("/check")
 async def root():
@@ -166,19 +167,80 @@ async def transcribe_audio(audio_file: UploadFile = File(...)):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.post("/generate-story/")
-async def generate_story(prompt: str = Form(...)):
+async def generate_story(prompt: str):
     try:
-        response = client.chat.completions.create(
+        story_response =  client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
                 {"role": "system", "content": prompt}
             ],
             max_tokens=150
         )
-        return {"story": response['choices'][0]['message']['content']}
+        response =  client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {
+                    "role": "system",
+                    "content": "You will be provided with a block of text, and your task is to extract a list of keywords from it."
+                },
+                {
+                    "role": "user",
+                    "content": story_response.choices[0].message.content
+                }
+            ],
+            temperature=0.5,
+            max_tokens=64,
+            top_p=1
+        )
+        return {"keywords": response.choices[0].message.content, "story": story_response.choices[0].message.content}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/regenerate_script")
+async def regenerate_script(user_script: str, prompt_type: str):
+    # Analyze user_script and determine which prompt to use
+    # Based on prompt_type, select the appropriate prompt and generate script
+    if prompt_type == "Shorter":
+        prompt = "Make the script shorter:\n" + user_script
+    elif prompt_type == "Longer":
+        prompt = "Make the script longer:\n" + user_script
+    elif prompt_type == "Casual":
+        prompt = "Make the script sound casual:\n" + user_script
+    elif prompt_type == "Professional":
+        prompt = "Make the script sound professional:\n" + user_script
+    else:
+        return {"error": "Invalid prompt type"}
+
+    # Use await to call the asynchronous function
+    regenerated_script = await generate_story(prompt)
+    return {"regenerated_script": regenerated_script}
+
+
+
+@app.post("/generate-story/")
+async def story_generation(prompt: str):
+    return {"response ": await generate_story(prompt)}
+@app.get("/convert_text_to_music/")
+async def convert_text_to_music(text: str):
+    import requests
+
+    url = "https://api.tryleap.ai/api/v1/music"
+
+    payload = {
+        "prompt": "An electronic music soundtrack with a trumpet solo",
+        "mode": "melody",
+        "duration": 28
+    }
+    headers = {
+        "accept": "application/json",
+        "content-type": "application/json",
+        "X-Api-Key": "le_62f9c378_MH3yuPlrw4TCf5IRK57ANJGY"
+    }
+
+    response = requests.post(url, json=payload, headers=headers)
+
+    print(response.text)
+    return response.json()
 
 
 if __name__ == "__main__":
