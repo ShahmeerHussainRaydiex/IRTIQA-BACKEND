@@ -8,8 +8,6 @@ import json
 from dotenv import load_dotenv
 import os
 from openai import OpenAI
-from pprint import pprint
-from leap import Leap, ApiException
 
 
 
